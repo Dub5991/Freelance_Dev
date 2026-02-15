@@ -4,10 +4,15 @@
 *.key
 *.pem
 
-# User Data and Vault
-vault/
-!vault/**/.gitkeep
+# User Data and Vault - Protect user data but allow documentation
+vault/**/*.yaml
+vault/**/*.yml
+vault/**/task-*.yaml
+vault/**/INV-*.yaml
+vault/**/EXP-*.yaml
+vault/**/*.json
 !vault/**/README.md
+!vault/**/*.md
 
 # Python
 __pycache__/
