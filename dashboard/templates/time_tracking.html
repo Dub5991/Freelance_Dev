@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }} - {{ dashboard_title }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>{{ page_title }}</h2>
+    <p class="subtitle">Hours logged and utilization tracking</p>
+</div>
+
+<!-- Time Summary -->
+<div class="metrics-grid">
+    <div class="metric-card">
+        <h3>Total Hours</h3>
+        <p class="metric-value">{{ "%.1f"|format(time_data.total_hours) }}</p>
+        <p class="metric-label">last {{ days }} days</p>
+    </div>
+    
+    <div class="metric-card">
+        <h3>Billable Hours</h3>
+        <p class="metric-value">{{ "%.1f"|format(time_data.billable_hours) }}</p>
+        <p class="metric-label">{{ "%.1f"|format(time_data.utilization_rate) }}% utilization</p>
+    </div>
+    
+    <div class="metric-card">
+        <h3>Non-Billable</h3>
+        <p class="metric-value">{{ "%.1f"|format(time_data.non_billable_hours) }}</p>
+        <p class="metric-label">internal/admin work</p>
+    </div>
+</div>
+
+<!-- Filter Controls -->
+<div class="filter-controls">
+    <a href="/time-tracking?days=7" class="filter-btn {% if days == 7 %}active{% endif %}">Last 7 Days</a>
+    <a href="/time-tracking?days=30" class="filter-btn {% if days == 30 %}active{% endif %}">Last 30 Days</a>
+    <a href="/time-tracking?days=90" class="filter-btn {% if days == 90 %}active{% endif %}">Last 90 Days</a>
+</div>
+
+<!-- Hours by Client -->
+<div class="clients-hours-section">
+    <h3>Hours by Client</h3>
+    <div class="table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Client</th>
+                    <th>Billable Hours</th>
+                    <th>Non-Billable Hours</th>
+                    <th>Total Hours</th>
+                    <th>Billable %</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if time_data.by_client %}
+                    {% for client, hours in time_data.by_client.items() %}
+                    {% set total = hours.billable + hours.non_billable %}
+                    {% set billable_pct = (hours.billable / total * 100) if total > 0 else 0 %}
+                    <tr>
+                        <td><strong>{{ client }}</strong></td>
+                        <td>{{ "%.1f"|format(hours.billable) }}h</td>
+                        <td>{{ "%.1f"|format(hours.non_billable) }}h</td>
+                        <td>{{ "%.1f"|format(total) }}h</td>
+                        <td>
+                            <div class="progress-bar small">
+                                <div class="progress-fill" style="width: {{ billable_pct }}%"></div>
+                            </div>
+                            <span class="progress-text">{{ "%.0f"|format(billable_pct) }}%</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="5" class="no-data">No time entries found</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Daily Hours Chart -->
+<div class="chart-section">
+    <h3>Daily Hours</h3>
+    <div class="chart-container">
+        <canvas id="hoursChart"></canvas>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Hours chart data
+const hoursData = {{ time_data.by_date|tojson }};
+
+// Create hours chart when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    createHoursChart('hoursChart', hoursData);
+});
+</script>
+{% endblock %}

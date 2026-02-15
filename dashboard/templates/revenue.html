@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }} - {{ dashboard_title }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>{{ page_title }}</h2>
+    <p class="subtitle">Financial performance and invoice tracking</p>
+</div>
+
+<!-- Revenue Summary -->
+<div class="metrics-grid">
+    <div class="metric-card">
+        <h3>Total Revenue</h3>
+        <p class="metric-value">${{ "%.2f"|format(revenue.total) }}</p>
+        <p class="metric-label">last 12 months</p>
+    </div>
+    
+    <div class="metric-card">
+        <h3>Monthly Average</h3>
+        <p class="metric-value">${{ "%.2f"|format(revenue.average) }}</p>
+        <p class="metric-label">average per month</p>
+    </div>
+</div>
+
+<!-- Revenue Chart -->
+<div class="chart-section">
+    <h3>Monthly Revenue Trend</h3>
+    <div class="chart-container">
+        <canvas id="revenueChart"></canvas>
+    </div>
+</div>
+
+<!-- Recent Invoices -->
+<div class="invoices-section">
+    <h3>Recent Invoices</h3>
+    <div class="table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Invoice ID</th>
+                    <th>Client</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th>Issue Date</th>
+                    <th>Due Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if invoices %}
+                    {% for invoice in invoices %}
+                    <tr>
+                        <td><code>{{ invoice.id }}</code></td>
+                        <td>{{ invoice.client }}</td>
+                        <td><strong>${{ "%.2f"|format(invoice.amount) }}</strong></td>
+                        <td><span class="badge badge-{{ invoice.status }}">{{ invoice.status }}</span></td>
+                        <td>{{ invoice.issue_date }}</td>
+                        <td>{{ invoice.due_date }}</td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="6" class="no-data">No invoices found</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Revenue chart data
+const revenueData = {{ revenue.monthly|tojson }};
+
+// Create revenue chart when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    createRevenueChart('revenueChart', revenueData);
+});
+</script>
+{% endblock %}

@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }} - {{ dashboard_title }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>{{ page_title }}</h2>
+    <p class="subtitle">Real-time overview of your CV/AI freelance business</p>
+</div>
+
+<!-- Key Metrics Cards -->
+<div class="metrics-grid">
+    <div class="metric-card">
+        <div class="metric-icon">📊</div>
+        <div class="metric-content">
+            <h3>Active Projects</h3>
+            <p class="metric-value">{{ overview.active_projects }}</p>
+            <p class="metric-label">in progress</p>
+        </div>
+    </div>
+
+    <div class="metric-card">
+        <div class="metric-icon">👥</div>
+        <div class="metric-content">
+            <h3>Active Clients</h3>
+            <p class="metric-value">{{ overview.active_clients }}</p>
+            <p class="metric-label">of {{ overview.total_clients }} total</p>
+        </div>
+    </div>
+
+    <div class="metric-card">
+        <div class="metric-icon">💰</div>
+        <div class="metric-content">
+            <h3>Total Revenue</h3>
+            <p class="metric-value">${{ "%.2f"|format(overview.total_revenue) }}</p>
+            <p class="metric-label">this period</p>
+        </div>
+    </div>
+
+    <div class="metric-card">
+        <div class="metric-icon">⏱️</div>
+        <div class="metric-content">
+            <h3>Hours This Month</h3>
+            <p class="metric-value">{{ "%.1f"|format(overview.hours_this_month) }}</p>
+            <p class="metric-label">{{ "%.1f"|format(overview.utilization_rate) }}% billable</p>
+        </div>
+    </div>
+</div>
+
+<!-- Additional Stats -->
+<div class="stats-section">
+    <div class="stat-row">
+        <div class="stat-card">
+            <h4>Financial Health</h4>
+            <div class="stat-grid">
+                <div class="stat-item">
+                    <span class="stat-label">Paid Invoices</span>
+                    <span class="stat-value success">{{ overview.paid_invoices }}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Pending</span>
+                    <span class="stat-value warning">{{ overview.pending_invoices }}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Overdue</span>
+                    <span class="stat-value danger">{{ overview.overdue_invoices }}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Pending Revenue</span>
+                    <span class="stat-value">${{ "%.2f"|format(overview.pending_revenue) }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <h4>Productivity</h4>
+            <div class="stat-grid">
+                <div class="stat-item">
+                    <span class="stat-label">Billable Hours</span>
+                    <span class="stat-value">{{ "%.1f"|format(overview.billable_hours_month) }}h</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Total Hours</span>
+                    <span class="stat-value">{{ "%.1f"|format(overview.hours_this_month) }}h</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Utilization</span>
+                    <span class="stat-value">{{ "%.1f"|format(overview.utilization_rate) }}%</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="actions-section">
+    <h3>Quick Actions</h3>
+    <div class="action-buttons">
+        <a href="/projects" class="btn btn-primary">View All Projects</a>
+        <a href="/clients" class="btn btn-secondary">Manage Clients</a>
+        <a href="/revenue" class="btn btn-secondary">Financial Reports</a>
+        <a href="/time-tracking" class="btn btn-secondary">Log Hours</a>
+    </div>
+</div>
+{% endblock %}

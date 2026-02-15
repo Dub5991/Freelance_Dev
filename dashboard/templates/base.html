@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ dashboard_title }}{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <h1>{{ dashboard_title }}</h1>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="/" class="{% if current_page == '/' %}active{% endif %}">Overview</a></li>
+                <li><a href="/projects" class="{% if current_page == '/projects' %}active{% endif %}">Projects</a></li>
+                <li><a href="/clients" class="{% if current_page == '/clients' %}active{% endif %}">Clients</a></li>
+                <li><a href="/revenue" class="{% if current_page == '/revenue' %}active{% endif %}">Revenue</a></li>
+                <li><a href="/pipeline" class="{% if current_page == '/pipeline' %}active{% endif %}">Pipeline</a></li>
+                <li><a href="/time-tracking" class="{% if current_page == '/time-tracking' %}active{% endif %}">Time Tracking</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; {{ current_year }} Freelance Dev OS. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', path='/js/dashboard.js') }}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
