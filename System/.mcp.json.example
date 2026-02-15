@@ -1,0 +1,48 @@
+{
+  "mcpServers": {
+    "work": {
+      "command": "python",
+      "args": ["{{VAULT_PATH}}/../../core/mcp/work_server.py"],
+      "env": {
+        "VAULT_PATH": "{{VAULT_PATH}}"
+      }
+    },
+    "client": {
+      "command": "python",
+      "args": ["{{VAULT_PATH}}/../../core/mcp/client_server.py"],
+      "env": {
+        "VAULT_PATH": "{{VAULT_PATH}}"
+      }
+    },
+    "billing": {
+      "command": "python",
+      "args": ["{{VAULT_PATH}}/../../core/mcp/billing_server.py"],
+      "env": {
+        "VAULT_PATH": "{{VAULT_PATH}}",
+        "STRIPE_SECRET_KEY": "{{STRIPE_SECRET_KEY}}"
+      }
+    },
+    "llc-ops": {
+      "command": "python",
+      "args": ["{{VAULT_PATH}}/../../core/mcp/llc_ops_server.py"],
+      "env": {
+        "VAULT_PATH": "{{VAULT_PATH}}",
+        "QUARTERLY_TAX_RATE": "0.25"
+      }
+    },
+    "onboarding": {
+      "command": "python",
+      "args": ["{{VAULT_PATH}}/../../core/mcp/onboarding_server.py"],
+      "env": {
+        "VAULT_PATH": "{{VAULT_PATH}}"
+      }
+    },
+    "career": {
+      "command": "python",
+      "args": ["{{VAULT_PATH}}/../../core/mcp/career_server.py"],
+      "env": {
+        "VAULT_PATH": "{{VAULT_PATH}}"
+      }
+    }
+  }
+}
