@@ -250,7 +250,8 @@ def list_tasks(
 
 
 def complete_task(task_id: str, notes: str = "") -> dict:
-    """Mark a task as completed."""
+    """
+    Mark a task as completed.
     
     Args:
         task_id: The unique task identifier
@@ -300,7 +301,8 @@ def log_hours(
     description: str = "",
     work_date: Optional[str] = None
 ) -> dict:
-    """Log hours worked on a task."""
+    """
+    Log hours worked on a task.
     
     Args:
         task_id: The unique task identifier
@@ -364,7 +366,8 @@ def get_billable_summary(
     client: Optional[str] = None,
     period: str = "current_month"
 ) -> dict:
-    """Get a summary of billable hours, optionally filtered by client and period."""
+    """
+    Get a summary of billable hours, optionally filtered by client and period.
     
     Args:
         client: Filter by client name (None = all clients)
@@ -447,7 +450,8 @@ def update_task(
     description: Optional[str] = None,
     pillar: Optional[str] = None
 ) -> dict:
-    """Update task fields."""
+    """
+    Update task fields.
     
     Args:
         task_id: The unique task identifier
