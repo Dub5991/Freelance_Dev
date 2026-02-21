@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }} - {{ dashboard_title }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>{{ page_title }}</h2>
+    <p class="subtitle">Active CV/AI projects and their status</p>
+</div>
+
+<!-- Filter Controls -->
+<div class="filter-controls">
+    <a href="/projects" class="filter-btn {% if not filter_status %}active{% endif %}">All</a>
+    <a href="/projects?status=pending" class="filter-btn {% if filter_status == 'pending' %}active{% endif %}">Pending</a>
+    <a href="/projects?status=in_progress" class="filter-btn {% if filter_status == 'in_progress' %}active{% endif %}">In Progress</a>
+    <a href="/projects?status=done" class="filter-btn {% if filter_status == 'done' %}active{% endif %}">Completed</a>
+</div>
+
+<!-- Projects Table -->
+<div class="table-container">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Project</th>
+                <th>Client</th>
+                <th>Status</th>
+                <th>Priority</th>
+                <th>Hours</th>
+                <th>Estimated</th>
+                <th>Progress</th>
+                <th>Due Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if projects %}
+                {% for project in projects %}
+                <tr>
+                    <td>
+                        <strong>{{ project.title }}</strong>
+                        {% if project.billable %}<span class="badge badge-billable">BILLABLE</span>{% endif %}
+                    </td>
+                    <td>{{ project.client }}</td>
+                    <td><span class="badge badge-{{ project.status }}">{{ project.status }}</span></td>
+                    <td><span class="priority priority-{{ project.priority }}">{{ project.priority }}</span></td>
+                    <td>{{ "%.1f"|format(project.hours_logged) }}h</td>
+                    <td>{{ "%.1f"|format(project.estimated_hours) }}h</td>
+                    <td>
+                        <div class="progress-bar">
+                            {% set progress = (project.hours_logged / project.estimated_hours * 100) if project.estimated_hours > 0 else 0 %}
+                            <div class="progress-fill" style="width: {{ progress|min(100) }}%"></div>
+                        </div>
+                        <span class="progress-text">{{ "%.0f"|format(progress|min(100)) }}%</span>
+                    </td>
+                    <td>{{ project.due_date if project.due_date else 'N/A' }}</td>
+                </tr>
+                {% endfor %}
+            {% else %}
+                <tr>
+                    <td colspan="8" class="no-data">No projects found</td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Summary Stats -->
+<div class="summary-section">
+    <h3>Project Summary</h3>
+    <div class="summary-grid">
+        <div class="summary-item">
+            <span class="summary-label">Total Projects</span>
+            <span class="summary-value">{{ projects|length }}</span>
+        </div>
+        <div class="summary-item">
+            <span class="summary-label">Billable Projects</span>
+            <span class="summary-value">{{ projects|selectattr("billable")|list|length }}</span>
+        </div>
+        <div class="summary-item">
+            <span class="summary-label">Total Hours Logged</span>
+            <span class="summary-value">{{ "%.1f"|format(projects|sum(attribute='hours_logged')) }}h</span>
+        </div>
+        <div class="summary-item">
+            <span class="summary-label">Total Estimated</span>
+            <span class="summary-value">{{ "%.1f"|format(projects|sum(attribute='estimated_hours')) }}h</span>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }} - {{ dashboard_title }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h2>{{ page_title }}</h2>
+    <p class="subtitle">Client relationships and health monitoring</p>
+</div>
+
+<!-- Clients Grid -->
+<div class="clients-grid">
+    {% if clients %}
+        {% for client in clients %}
+        <div class="client-card">
+            <div class="client-header">
+                <h3>{{ client.name }}</h3>
+                <span class="health-badge health-{{ client.health_status }}">
+                    {{ client.health_score }}/100
+                </span>
+            </div>
+            <div class="client-details">
+                <p><strong>Company:</strong> {{ client.company if client.company else 'N/A' }}</p>
+                <p><strong>Email:</strong> {{ client.email }}</p>
+                <p><strong>Status:</strong> <span class="badge badge-{{ client.status }}">{{ client.status }}</span></p>
+                <p><strong>Client Since:</strong> {{ client.created_at[:10] if client.created_at else 'N/A' }}</p>
+            </div>
+            <div class="client-health">
+                <div class="health-bar">
+                    <div class="health-fill health-{{ client.health_status }}" 
+                         style="width: {{ client.health_score }}%"></div>
+                </div>
+                <p class="health-label">Health Score: {{ client.health_status|upper }}</p>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="no-data-card">
+            <p>No clients found</p>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Client Summary -->
+<div class="summary-section">
+    <h3>Client Summary</h3>
+    <div class="summary-grid">
+        <div class="summary-item">
+            <span class="summary-label">Total Clients</span>
+            <span class="summary-value">{{ clients|length }}</span>
+        </div>
+        <div class="summary-item">
+            <span class="summary-label">Active Clients</span>
+            <span class="summary-value">{{ clients|selectattr("status", "equalto", "active")|list|length }}</span>
+        </div>
+        <div class="summary-item">
+            <span class="summary-label">Healthy Clients</span>
+            <span class="summary-value">{{ clients|selectattr("health_status", "equalto", "good")|list|length }}</span>
+        </div>
+        <div class="summary-item">
+            <span class="summary-label">At Risk</span>
+            <span class="summary-value">{{ clients|selectattr("health_status", "equalto", "poor")|list|length }}</span>
+        </div>
+    </div>
+</div>
+{% endblock %}
