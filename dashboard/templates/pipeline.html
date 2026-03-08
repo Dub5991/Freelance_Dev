@@ -1,145 +1,120 @@
 {% extends "base.html" %}
 
-{% block title %}{{ page_title }} - {{ dashboard_title }}{% endblock %}
+{% block title %}Pipeline — {{ dashboard_title }}{% endblock %}
 
 {% block content %}
+
 <div class="page-header">
-    <h2>{{ page_title }}</h2>
-    <p class="subtitle">Sales pipeline and conversion tracking</p>
+  <h1>Pipeline</h1>
+  <p>Sales funnel — leads through active clients</p>
 </div>
 
-<!-- Conversion Rates -->
+<!-- Conversion Rate KPIs -->
 <div class="metrics-grid">
-    <div class="metric-card">
-        <h3>Lead → Proposal</h3>
-        <p class="metric-value">{{ "%.1f"|format(pipeline.conversion_rates.lead_to_proposal) }}%</p>
-        <p class="metric-label">conversion rate</p>
-    </div>
-    
-    <div class="metric-card">
-        <h3>Proposal → Contract</h3>
-        <p class="metric-value">{{ "%.1f"|format(pipeline.conversion_rates.proposal_to_contract) }}%</p>
-        <p class="metric-label">conversion rate</p>
-    </div>
-    
-    <div class="metric-card">
-        <h3>Contract → Active</h3>
-        <p class="metric-value">{{ "%.1f"|format(pipeline.conversion_rates.contract_to_active) }}%</p>
-        <p class="metric-label">conversion rate</p>
-    </div>
+  {% set rates = [
+    ('Lead → Proposal',   pipeline.conversion_rates.lead_to_proposal,   'purple'),
+    ('Proposal → Contract', pipeline.conversion_rates.proposal_to_contract, 'cyan'),
+    ('Contract → Active', pipeline.conversion_rates.contract_to_active, 'green'),
+  ] %}
+  {% for label, val, color in rates %}
+  <div class="metric-card {{ color }}">
+    <div class="metric-icon {{ color }}">📊</div>
+    <div class="metric-label">{{ label }}</div>
+    <div class="metric-value">{{ "%.1f"|format(val) }}%</div>
+    <div class="metric-delta">conversion rate</div>
+  </div>
+  {% endfor %}
 </div>
 
-<!-- Pipeline Stages -->
-<div class="pipeline-section">
-    <h3>Pipeline Stages</h3>
-    
-    <div class="pipeline-stages">
-        <!-- Leads -->
-        <div class="pipeline-stage">
-            <div class="stage-header">
-                <h4>Leads</h4>
-                <span class="stage-count">{{ pipeline.stages.leads|length }}</span>
-            </div>
-            <div class="stage-items">
-                {% for item in pipeline.stages.leads %}
-                <div class="pipeline-item">
-                    <p class="item-name">{{ item.client_name }}</p>
-                    <p class="item-value">${{ "%.2f"|format(item.value) }}</p>
-                    <p class="item-date">{{ item.created_at[:10] if item.created_at else 'N/A' }}</p>
-                </div>
-                {% endfor %}
-                {% if not pipeline.stages.leads %}
-                <p class="no-items">No leads</p>
-                {% endif %}
-            </div>
-        </div>
-        
-        <!-- Proposals -->
-        <div class="pipeline-stage">
-            <div class="stage-header">
-                <h4>Proposals</h4>
-                <span class="stage-count">{{ pipeline.stages.proposals|length }}</span>
-            </div>
-            <div class="stage-items">
-                {% for item in pipeline.stages.proposals %}
-                <div class="pipeline-item">
-                    <p class="item-name">{{ item.client_name }}</p>
-                    <p class="item-value">${{ "%.2f"|format(item.value) }}</p>
-                    <p class="item-date">{{ item.created_at[:10] if item.created_at else 'N/A' }}</p>
-                </div>
-                {% endfor %}
-                {% if not pipeline.stages.proposals %}
-                <p class="no-items">No proposals</p>
-                {% endif %}
-            </div>
-        </div>
-        
-        <!-- Contracts -->
-        <div class="pipeline-stage">
-            <div class="stage-header">
-                <h4>Contracts</h4>
-                <span class="stage-count">{{ pipeline.stages.contracts|length }}</span>
-            </div>
-            <div class="stage-items">
-                {% for item in pipeline.stages.contracts %}
-                <div class="pipeline-item">
-                    <p class="item-name">{{ item.client_name }}</p>
-                    <p class="item-value">${{ "%.2f"|format(item.value) }}</p>
-                    <p class="item-date">{{ item.created_at[:10] if item.created_at else 'N/A' }}</p>
-                </div>
-                {% endfor %}
-                {% if not pipeline.stages.contracts %}
-                <p class="no-items">No contracts</p>
-                {% endif %}
-            </div>
-        </div>
-        
-        <!-- Active -->
-        <div class="pipeline-stage">
-            <div class="stage-header">
-                <h4>Active</h4>
-                <span class="stage-count">{{ pipeline.stages.active|length }}</span>
-            </div>
-            <div class="stage-items">
-                {% for item in pipeline.stages.active %}
-                <div class="pipeline-item">
-                    <p class="item-name">{{ item.client_name }}</p>
-                    <p class="item-value">${{ "%.2f"|format(item.value) }}</p>
-                    <p class="item-date">{{ item.created_at[:10] if item.created_at else 'N/A' }}</p>
-                </div>
-                {% endfor %}
-                {% if not pipeline.stages.active %}
-                <p class="no-items">No active projects</p>
-                {% endif %}
-            </div>
-        </div>
+<!-- Kanban-style Pipeline Columns -->
+<div class="pipeline-grid">
+
+  {% set stage_defs = [
+    ('leads',     '🎯 Leads',     pipeline.stages.leads),
+    ('proposals', '📋 Proposals', pipeline.stages.proposals),
+    ('contracts', '✍️ Contracts', pipeline.stages.contracts),
+    ('active',    '🚀 Active',    pipeline.stages.active),
+  ] %}
+
+  {% for stage_key, stage_label, stage_items in stage_defs %}
+  <div class="pipeline-col">
+    <div class="pipeline-col-header">
+      <span class="pipeline-col-title">{{ stage_label }}</span>
+      <span class="badge badge-info">{{ stage_items | length }}</span>
     </div>
+    <div class="pipeline-col-body">
+
+      {% if stage_items %}
+        {% for item in stage_items %}
+        <div class="pipeline-card">
+          <div class="pipeline-card-name">{{ item.client_name }}</div>
+          <div class="pipeline-card-value">${{ "%.2f"|format(item.value) }}</div>
+          <div class="pipeline-card-date">{{ item.created_at[:10] if item.created_at else '—' }}</div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="empty-state" style="padding:1.5rem">
+          <div class="empty-state-icon" style="font-size:1.5rem">—</div>
+          <div class="empty-state-desc">No {{ stage_label | lower }}</div>
+        </div>
+      {% endif %}
+
+    </div>
+  </div>
+  {% endfor %}
+
 </div>
 
-<!-- Pipeline Value -->
-<div class="summary-section">
-    <h3>Pipeline Value</h3>
-    <div class="summary-grid">
-        {% set total_pipeline = (pipeline.stages.leads|sum(attribute='value') + 
-                                  pipeline.stages.proposals|sum(attribute='value') + 
-                                  pipeline.stages.contracts|sum(attribute='value') + 
-                                  pipeline.stages.active|sum(attribute='value')) %}
-        <div class="summary-item">
-            <span class="summary-label">Total Pipeline Value</span>
-            <span class="summary-value">${{ "%.2f"|format(total_pipeline) }}</span>
-        </div>
-        <div class="summary-item">
-            <span class="summary-label">Leads Value</span>
-            <span class="summary-value">${{ "%.2f"|format(pipeline.stages.leads|sum(attribute='value')) }}</span>
-        </div>
-        <div class="summary-item">
-            <span class="summary-label">Proposals Value</span>
-            <span class="summary-value">${{ "%.2f"|format(pipeline.stages.proposals|sum(attribute='value')) }}</span>
-        </div>
-        <div class="summary-item">
-            <span class="summary-label">Active Value</span>
-            <span class="summary-value">${{ "%.2f"|format(pipeline.stages.active|sum(attribute='value')) }}</span>
-        </div>
+<!-- Pipeline Value Chart -->
+<div class="dashboard-grid">
+  <div class="card">
+    <div class="card-header"><div class="card-title">Pipeline Value by Stage</div></div>
+    <div class="card-body">
+      <div class="chart-wrapper">
+        <canvas id="pipelineChart"></canvas>
+      </div>
     </div>
+  </div>
+
+  <!-- Summary stats -->
+  <div class="card">
+    <div class="card-header"><div class="card-title">Value Summary</div></div>
+    <div class="card-body">
+      {% set total_pipeline = (
+        pipeline.stages.leads     | sum(attribute='value') +
+        pipeline.stages.proposals | sum(attribute='value') +
+        pipeline.stages.contracts | sum(attribute='value') +
+        pipeline.stages.active    | sum(attribute='value')
+      ) %}
+
+      <div class="stat-grid" style="grid-template-columns:1fr">
+        <div class="stat-item">
+          <span class="stat-label">Total Pipeline</span>
+          <span class="stat-value" style="font-size:1.6rem">${{ "%.2f"|format(total_pipeline) }}</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Leads</span>
+          <span class="stat-value" style="font-size:1.1rem">${{ "%.2f"|format(pipeline.stages.leads|sum(attribute='value')) }}</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Proposals</span>
+          <span class="stat-value" style="font-size:1.1rem">${{ "%.2f"|format(pipeline.stages.proposals|sum(attribute='value')) }}</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Active</span>
+          <span class="stat-value success" style="font-size:1.1rem">${{ "%.2f"|format(pipeline.stages.active|sum(attribute='value')) }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  FDO.renderPipelineChart('pipelineChart', {{ pipeline.stages | tojson }});
+});
+</script>
 {% endblock %}

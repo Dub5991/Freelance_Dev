@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="{{ theme }}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Sign In — {{ dashboard_title }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}">
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.5/dist/cdn.min.js"></script>
+</head>
+<body x-data x-cloak>
+
+<div
+  class="login-page"
+  x-data="FDO.loginComponent()"
+>
+  <!-- Background orbs -->
+  <div class="login-bg-orb orb1"></div>
+  <div class="login-bg-orb orb2"></div>
+
+  <div class="login-card">
+    <!-- Logo -->
+    <div class="login-logo">
+      <div class="login-logo-icon">🚀</div>
+      <div>
+        <div class="login-logo-text">Freelance Dev OS</div>
+        <div class="login-logo-sub">Business Management Platform</div>
+      </div>
+    </div>
+
+    <h1 class="login-title">Welcome back</h1>
+    <p class="login-subtitle">Sign in to access your dashboard</p>
+
+    <!-- Error alert (conditional rendering) -->
+    <div
+      class="login-error"
+      x-show="error"
+      x-transition:enter="transition ease-out duration-200"
+      x-transition:enter-start="opacity-0 -translate-y-2"
+      x-transition:enter-end="opacity-100 translate-y-0"
+    >
+      <span>⚠️</span>
+      <span x-text="error"></span>
+    </div>
+
+    <!-- Login form -->
+    <form @submit.prevent="submit()">
+
+      <div class="form-group">
+        <label class="form-label" for="username">Username</label>
+        <input
+          id="username"
+          class="form-control"
+          type="text"
+          placeholder="admin"
+          x-model="username"
+          autocomplete="username"
+          :disabled="loading"
+          required
+        >
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="password">Password</label>
+        <div class="password-input-wrap">
+          <input
+            id="password"
+            class="form-control"
+            :type="showPassword ? 'text' : 'password'"
+            placeholder="••••••••"
+            x-model="password"
+            autocomplete="current-password"
+            :disabled="loading"
+            required
+          >
+          <button
+            type="button"
+            class="password-toggle"
+            @click="showPassword = !showPassword"
+            :title="showPassword ? 'Hide password' : 'Show password'"
+          >
+            <!-- Eye / EyeOff icon -->
+            <template x-if="!showPassword">
+              <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+              </svg>
+            </template>
+            <template x-if="showPassword">
+              <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/>
+              </svg>
+            </template>
+          </button>
+        </div>
+      </div>
+
+      <!-- Submit button with loading state (conditional rendering) -->
+      <button
+        type="submit"
+        class="btn btn-primary btn-full btn-lg"
+        :disabled="loading"
+        style="margin-top:1rem"
+      >
+        <!-- Loading spinner (conditionally shown) -->
+        <template x-if="loading">
+          <svg class="spinner" style="width:18px;height:18px;border-width:2px;flex-shrink:0" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.3)" stroke-width="3" fill="none"/>
+            <path d="M12 2a10 10 0 0110 10" stroke="white" stroke-width="3" fill="none" stroke-linecap="round"/>
+          </svg>
+        </template>
+        <template x-if="!loading">
+          <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
+          </svg>
+        </template>
+        <span x-text="loading ? 'Signing in...' : 'Sign In'"></span>
+      </button>
+
+    </form>
+
+    <!-- Footer note -->
+    <p style="text-align:center;margin-top:2rem;font-size:0.75rem;color:var(--text-muted)">
+      Freelance Dev OS &copy; {{ current_year }} — Secured with JWT &amp; bcrypt
+    </p>
+  </div>
+</div>
+
+<script src="{{ url_for('static', path='/js/app.js') }}"></script>
+</body>
+</html>

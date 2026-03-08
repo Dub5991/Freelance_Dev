@@ -1,105 +1,189 @@
 {% extends "base.html" %}
 
-{% block title %}{{ page_title }} - {{ dashboard_title }}{% endblock %}
+{% block title %}Overview — {{ dashboard_title }}{% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <h2>{{ page_title }}</h2>
-    <p class="subtitle">Real-time overview of your CV/AI freelance business</p>
-</div>
+{# Alpine component wraps everything for live WebSocket updates #}
+<div
+  x-data="FDO.overviewComponent({{ overview | tojson }})"
+  x-init="init()"
+  @beforeunload.window="destroy()"
+>
 
-<!-- Key Metrics Cards -->
-<div class="metrics-grid">
-    <div class="metric-card">
-        <div class="metric-icon">📊</div>
-        <div class="metric-content">
-            <h3>Active Projects</h3>
-            <p class="metric-value">{{ overview.active_projects }}</p>
-            <p class="metric-label">in progress</p>
-        </div>
+  <!-- Page Header -->
+  <div class="page-header" style="display:flex;align-items:center;justify-content:space-between">
+    <div>
+      <h1>Overview</h1>
+      <p>Real-time business snapshot — <span x-text="lastUpdate ? 'Updated ' + lastUpdate : 'connecting...'"></span></p>
+    </div>
+    <!-- Live badge (conditionally shown when WebSocket is connected) -->
+    <div x-show="wsConnected" x-transition style="display:flex;align-items:center;gap:0.5rem;padding:0.4rem 0.9rem;background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.3);border-radius:9999px;font-size:0.78rem;color:#34d399">
+      <span class="live-dot"></span> Live
+    </div>
+  </div>
+
+  <!-- ── KPI Cards ─────────────────────────────────────────────────────────── -->
+  <div class="metrics-grid">
+
+    <!-- Active Projects -->
+    <div class="metric-card purple">
+      <div class="metric-icon purple">📊</div>
+      <div class="metric-label">Active Projects</div>
+      <div class="metric-value"
+        data-counter="{{ overview.active_projects }}"
+        x-text="data.active_projects ?? {{ overview.active_projects }}">
+        {{ overview.active_projects }}
+      </div>
+      <div class="metric-delta">in progress</div>
     </div>
 
-    <div class="metric-card">
-        <div class="metric-icon">👥</div>
-        <div class="metric-content">
-            <h3>Active Clients</h3>
-            <p class="metric-value">{{ overview.active_clients }}</p>
-            <p class="metric-label">of {{ overview.total_clients }} total</p>
-        </div>
+    <!-- Active Clients -->
+    <div class="metric-card cyan">
+      <div class="metric-icon cyan">👥</div>
+      <div class="metric-label">Active Clients</div>
+      <div class="metric-value" x-text="data.active_clients ?? {{ overview.active_clients }}">
+        {{ overview.active_clients }}
+      </div>
+      <div class="metric-delta">of <span x-text="data.total_clients ?? {{ overview.total_clients }}"></span> total</div>
     </div>
 
-    <div class="metric-card">
-        <div class="metric-icon">💰</div>
-        <div class="metric-content">
-            <h3>Total Revenue</h3>
-            <p class="metric-value">${{ "%.2f"|format(overview.total_revenue) }}</p>
-            <p class="metric-label">this period</p>
-        </div>
+    <!-- Revenue -->
+    <div class="metric-card green">
+      <div class="metric-icon green">💰</div>
+      <div class="metric-label">Revenue Collected</div>
+      <div class="metric-value"
+        x-text="'$' + (data.total_revenue ?? {{ overview.total_revenue }}).toFixed(2)">
+        ${{ "%.2f"|format(overview.total_revenue) }}
+      </div>
+      <div class="metric-delta up">
+        ↑ $<span x-text="(data.pending_revenue ?? {{ overview.pending_revenue }}).toFixed(2)"></span> pending
+      </div>
     </div>
 
-    <div class="metric-card">
-        <div class="metric-icon">⏱️</div>
-        <div class="metric-content">
-            <h3>Hours This Month</h3>
-            <p class="metric-value">{{ "%.1f"|format(overview.hours_this_month) }}</p>
-            <p class="metric-label">{{ "%.1f"|format(overview.utilization_rate) }}% billable</p>
-        </div>
+    <!-- Hours -->
+    <div class="metric-card yellow">
+      <div class="metric-icon yellow">⏱️</div>
+      <div class="metric-label">Hours This Month</div>
+      <div class="metric-value" x-text="(data.hours_this_month ?? {{ overview.hours_this_month }}).toFixed(1) + 'h'">
+        {{ "%.1f"|format(overview.hours_this_month) }}h
+      </div>
+      <div class="metric-delta">
+        <span x-text="(data.utilization_rate ?? {{ overview.utilization_rate }}).toFixed(1)"></span>% billable
+      </div>
     </div>
-</div>
 
-<!-- Additional Stats -->
-<div class="stats-section">
-    <div class="stat-row">
-        <div class="stat-card">
-            <h4>Financial Health</h4>
-            <div class="stat-grid">
-                <div class="stat-item">
-                    <span class="stat-label">Paid Invoices</span>
-                    <span class="stat-value success">{{ overview.paid_invoices }}</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">Pending</span>
-                    <span class="stat-value warning">{{ overview.pending_invoices }}</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">Overdue</span>
-                    <span class="stat-value danger">{{ overview.overdue_invoices }}</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">Pending Revenue</span>
-                    <span class="stat-value">${{ "%.2f"|format(overview.pending_revenue) }}</span>
-                </div>
-            </div>
+  </div>{# /.metrics-grid #}
+
+  <!-- ── Stats + Quick Actions ──────────────────────────────────────────────── -->
+  <div class="dashboard-grid">
+
+    <!-- Financial Health Card -->
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Financial Health</div>
+          <div class="card-subtitle">Invoice status breakdown</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="stat-grid">
+          <div class="stat-item">
+            <span class="stat-label">Paid Invoices</span>
+            <span class="stat-value success" x-text="data.paid_invoices ?? {{ overview.paid_invoices }}">{{ overview.paid_invoices }}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Pending</span>
+            <span class="stat-value warning" x-text="data.pending_invoices ?? {{ overview.pending_invoices }}">{{ overview.pending_invoices }}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Overdue</span>
+            <span class="stat-value danger" x-text="data.overdue_invoices ?? {{ overview.overdue_invoices }}">{{ overview.overdue_invoices }}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Pending Revenue</span>
+            <span class="stat-value" x-text="'$' + (data.pending_revenue ?? {{ overview.pending_revenue }}).toFixed(2)">
+              ${{ "%.2f"|format(overview.pending_revenue) }}
+            </span>
+          </div>
         </div>
 
-        <div class="stat-card">
-            <h4>Productivity</h4>
-            <div class="stat-grid">
-                <div class="stat-item">
-                    <span class="stat-label">Billable Hours</span>
-                    <span class="stat-value">{{ "%.1f"|format(overview.billable_hours_month) }}h</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">Total Hours</span>
-                    <span class="stat-value">{{ "%.1f"|format(overview.hours_this_month) }}h</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">Utilization</span>
-                    <span class="stat-value">{{ "%.1f"|format(overview.utilization_rate) }}%</span>
-                </div>
-            </div>
+        <!-- Alert: overdue invoices (conditional rendering) -->
+        {% if overview.overdue_invoices > 0 %}
+        <div style="margin-top:1rem;padding:0.75rem 1rem;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.25);border-radius:8px;font-size:0.85rem;color:#f87171;display:flex;align-items:center;gap:0.5rem">
+          ⚠️ You have {{ overview.overdue_invoices }} overdue invoice{{ 's' if overview.overdue_invoices > 1 else '' }}.
+          <a href="/revenue" style="margin-left:auto;font-weight:600;text-decoration:underline">View →</a>
         </div>
+        {% endif %}
+      </div>
     </div>
-</div>
 
-<!-- Quick Actions -->
-<div class="actions-section">
-    <h3>Quick Actions</h3>
-    <div class="action-buttons">
-        <a href="/projects" class="btn btn-primary">View All Projects</a>
-        <a href="/clients" class="btn btn-secondary">Manage Clients</a>
-        <a href="/revenue" class="btn btn-secondary">Financial Reports</a>
-        <a href="/time-tracking" class="btn btn-secondary">Log Hours</a>
+    <!-- Productivity Card -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Productivity</div>
+      </div>
+      <div class="card-body">
+        <div class="stat-grid" style="grid-template-columns:1fr">
+          <div class="stat-item">
+            <span class="stat-label">Billable Hours</span>
+            <span class="stat-value" x-text="(data.billable_hours_month ?? {{ overview.billable_hours_month }}).toFixed(1) + 'h'">
+              {{ "%.1f"|format(overview.billable_hours_month) }}h
+            </span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Total Hours</span>
+            <span class="stat-value" x-text="(data.hours_this_month ?? {{ overview.hours_this_month }}).toFixed(1) + 'h'">
+              {{ "%.1f"|format(overview.hours_this_month) }}h
+            </span>
+          </div>
+        </div>
+
+        <!-- Utilization bar -->
+        <div style="margin-top:1rem">
+          <div style="display:flex;justify-content:space-between;font-size:0.78rem;color:var(--text-secondary);margin-bottom:0.4rem">
+            <span>Utilization Rate</span>
+            <span x-text="(data.utilization_rate ?? {{ overview.utilization_rate }}).toFixed(1) + '%'">
+              {{ "%.1f"|format(overview.utilization_rate) }}%
+            </span>
+          </div>
+          <div class="progress">
+            <div
+              class="progress-bar"
+              :class="{
+                'green':  (data.utilization_rate ?? {{ overview.utilization_rate }}) >= 70,
+                'yellow': (data.utilization_rate ?? {{ overview.utilization_rate }}) >= 40 && (data.utilization_rate ?? {{ overview.utilization_rate }}) < 70,
+                'red':    (data.utilization_rate ?? {{ overview.utilization_rate }}) < 40
+              }"
+              :style="'width:' + Math.min(data.utilization_rate ?? {{ overview.utilization_rate }}, 100) + '%'"
+            ></div>
+          </div>
+        </div>
+      </div>
     </div>
-</div>
+
+  </div>{# /.dashboard-grid #}
+
+  <!-- ── Quick Actions ──────────────────────────────────────────────────────── -->
+  <div class="card" style="margin-bottom:0">
+    <div class="card-header">
+      <div class="card-title">Quick Navigation</div>
+    </div>
+    <div class="card-body" style="display:flex;flex-wrap:wrap;gap:0.75rem">
+      <a href="/projects"     class="btn btn-primary">📊 Projects</a>
+      <a href="/clients"      class="btn btn-secondary">👥 Clients</a>
+      <a href="/revenue"      class="btn btn-secondary">💰 Revenue</a>
+      <a href="/time-tracking" class="btn btn-secondary">⏱️ Time Tracking</a>
+      <a href="/pipeline"     class="btn btn-secondary">🚀 Pipeline</a>
+      <a href="/settings"     class="btn btn-ghost">⚙️ Settings</a>
+    </div>
+  </div>
+
+</div>{# /x-data overview #}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Animate counters once page loads
+  document.addEventListener('DOMContentLoaded', FDO.initCounters);
+</script>
 {% endblock %}

@@ -1,0 +1,328 @@
+{% extends "base.html" %}
+
+{% block title %}Settings — {{ dashboard_title }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>Settings</h1>
+  <p>Configure your Freelance Dev OS dashboard</p>
+</div>
+
+<div
+  class="settings-grid"
+  x-data="FDO.settingsComponent()"
+>
+  <!-- Settings Sidebar Nav -->
+  <div class="settings-nav">
+    <div
+      class="settings-nav-item"
+      :class="{ 'active': activeTab === 'general' }"
+      @click="setTab('general')"
+    >
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+      </svg>
+      General
+    </div>
+
+    <div
+      class="settings-nav-item"
+      :class="{ 'active': activeTab === 'security' }"
+      @click="setTab('security')"
+    >
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+      </svg>
+      Security
+    </div>
+
+    <div
+      class="settings-nav-item"
+      :class="{ 'active': activeTab === 'appearance' }"
+      @click="setTab('appearance')"
+    >
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"/>
+      </svg>
+      Appearance
+    </div>
+
+    <div
+      class="settings-nav-item"
+      :class="{ 'active': activeTab === 'integrations' }"
+      @click="setTab('integrations')"
+    >
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+      </svg>
+      Integrations
+    </div>
+
+    <div
+      class="settings-nav-item"
+      :class="{ 'active': activeTab === 'about' }"
+      @click="setTab('about')"
+    >
+      <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
+      About
+    </div>
+  </div>
+
+  <!-- Settings Panels (conditional rendering via x-show) -->
+  <div>
+
+    <!-- ── General ─────────────────────────────────────────────────────── -->
+    <div class="settings-section card" x-show="activeTab === 'general'" x-transition>
+      <div class="card-header">
+        <div class="card-title">General Settings</div>
+      </div>
+      <div class="card-body">
+        <div class="settings-row">
+          <div>
+            <div class="settings-row-label">Dashboard Title</div>
+            <div class="settings-row-desc">Displayed in the browser tab and header</div>
+          </div>
+          <input type="text" class="form-control" style="width:220px" value="{{ dashboard_title }}">
+        </div>
+
+        <div class="settings-row">
+          <div>
+            <div class="settings-row-label">Live Data Refresh</div>
+            <div class="settings-row-desc">Auto-refresh overview via WebSocket</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" checked>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+
+        <div class="settings-row">
+          <div>
+            <div class="settings-row-label">Desktop Mode</div>
+            <div class="settings-row-desc">Running as desktop app (PyWebView)</div>
+          </div>
+          <span class="badge badge-info" id="desktop-mode-badge">
+            <!-- Filled by JS below -->
+          </span>
+        </div>
+
+        <div style="margin-top:1.5rem">
+          <button class="btn btn-primary" @click="saveGeneral()">
+            <template x-if="saved">
+              <span>✓ Saved!</span>
+            </template>
+            <template x-if="!saved">
+              <span>Save Changes</span>
+            </template>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Security ───────────────────────────────────────────────────── -->
+    <div class="settings-section card" x-show="activeTab === 'security'" x-transition>
+      <div class="card-header">
+        <div class="card-title">Security Settings</div>
+      </div>
+      <div class="card-body">
+        <div class="settings-row">
+          <div>
+            <div class="settings-row-label">Authentication</div>
+            <div class="settings-row-desc">JWT-based login is {{ 'enabled' if auth_enabled else 'disabled' }}</div>
+          </div>
+          <span class="badge {{ 'badge-success' if auth_enabled else 'badge-warning' }}">
+            {{ 'Enabled' if auth_enabled else 'Disabled' }}
+          </span>
+        </div>
+
+        <div class="settings-row">
+          <div>
+            <div class="settings-row-label">Rate Limiting</div>
+            <div class="settings-row-desc">SlowAPI — 120 req/min (auth: 10/min)</div>
+          </div>
+          <span class="badge badge-success">Active</span>
+        </div>
+
+        <div class="settings-row">
+          <div>
+            <div class="settings-row-label">Security Headers</div>
+            <div class="settings-row-desc">CSP, HSTS, X-Frame-Options, etc.</div>
+          </div>
+          <span class="badge badge-success">Injected</span>
+        </div>
+
+        <div class="settings-row">
+          <div>
+            <div class="settings-row-label">Password Hashing</div>
+            <div class="settings-row-desc">bcrypt (cost factor 12)</div>
+          </div>
+          <span class="badge badge-success">bcrypt</span>
+        </div>
+
+        <!-- Change password form (conditionally shown) -->
+        <div x-data="{ showForm: false }">
+          <button class="btn btn-secondary btn-sm" style="margin-top:1rem" @click="showForm = !showForm">
+            <span x-text="showForm ? '✕ Cancel' : '🔑 Change Password'"></span>
+          </button>
+
+          <div
+            x-show="showForm"
+            x-transition
+            style="margin-top:1.5rem"
+            x-data="{ current:'', next:'', confirm:'' }"
+          >
+            <div class="form-group">
+              <label class="form-label">Current Password</label>
+              <input type="password" class="form-control" x-model="current">
+            </div>
+            <div class="form-group">
+              <label class="form-label">New Password</label>
+              <input type="password" class="form-control" x-model="next">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Confirm New Password</label>
+              <input type="password" class="form-control" x-model="confirm">
+            </div>
+            <button class="btn btn-primary btn-sm" @click="$parent.changePassword(current, next, confirm)">
+              Update Password
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Appearance ──────────────────────────────────────────────────── -->
+    <div class="settings-section card" x-show="activeTab === 'appearance'" x-transition>
+      <div class="card-header">
+        <div class="card-title">Appearance</div>
+      </div>
+      <div class="card-body">
+        <div class="settings-row">
+          <div>
+            <div class="settings-row-label">Theme</div>
+            <div class="settings-row-desc">Choose between dark and light mode</div>
+          </div>
+          <div style="display:flex;gap:0.5rem">
+            <button
+              class="btn btn-sm"
+              :class="theme === 'dark' ? 'btn-primary' : 'btn-secondary'"
+              @click="theme = 'dark'; saveGeneral()"
+            >🌑 Dark</button>
+            <button
+              class="btn btn-sm"
+              :class="theme === 'light' ? 'btn-primary' : 'btn-secondary'"
+              @click="theme = 'light'; saveGeneral()"
+            >☀️ Light</button>
+          </div>
+        </div>
+
+        <div class="settings-row">
+          <div>
+            <div class="settings-row-label">Sidebar</div>
+            <div class="settings-row-desc">Always-visible left navigation panel</div>
+          </div>
+          <span class="badge badge-info">Fixed</span>
+        </div>
+
+        <div class="settings-row">
+          <div>
+            <div class="settings-row-label">Compact Mode</div>
+            <div class="settings-row-desc">Reduce card padding and spacing</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Integrations ────────────────────────────────────────────────── -->
+    <div class="settings-section card" x-show="activeTab === 'integrations'" x-transition>
+      <div class="card-header">
+        <div class="card-title">Integrations</div>
+      </div>
+      <div class="card-body">
+        <p style="color:var(--text-secondary);margin-bottom:1.5rem;font-size:0.9rem">
+          Configure API keys and external service connections in your <code>.env</code> file.
+        </p>
+
+        {% set integrations = [
+          ('Stripe', 'Payment processing & invoicing', 'STRIPE_API_KEY', '💳'),
+          ('Claude AI', 'AI assistant features', 'CLAUDE_API_KEY', '🤖'),
+          ('SMTP Email', 'Invoice & reminder delivery', 'SMTP_HOST', '📧'),
+        ] %}
+
+        {% for name, desc, env_key, icon in integrations %}
+        <div class="settings-row">
+          <div style="display:flex;align-items:center;gap:0.75rem">
+            <span style="font-size:1.4rem">{{ icon }}</span>
+            <div>
+              <div class="settings-row-label">{{ name }}</div>
+              <div class="settings-row-desc">{{ desc }} — set <code>{{ env_key }}</code></div>
+            </div>
+          </div>
+          <span class="badge badge-neutral">Configurable</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- ── About ───────────────────────────────────────────────────────── -->
+    <div class="settings-section card" x-show="activeTab === 'about'" x-transition>
+      <div class="card-header">
+        <div class="card-title">About</div>
+      </div>
+      <div class="card-body">
+        <div style="display:flex;align-items:center;gap:1rem;margin-bottom:2rem">
+          <div style="width:56px;height:56px;background:var(--grad-brand);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.8rem">🚀</div>
+          <div>
+            <div style="font-size:1.2rem;font-weight:700">Freelance Dev OS</div>
+            <div style="color:var(--text-secondary);font-size:0.875rem">v2.0.0 — Distribution Release</div>
+          </div>
+        </div>
+
+        <div class="stat-grid">
+          <div class="stat-item">
+            <span class="stat-label">Python</span>
+            <span class="stat-value" style="font-size:1rem">3.9+</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Framework</span>
+            <span class="stat-value" style="font-size:1rem">FastAPI</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Frontend</span>
+            <span class="stat-value" style="font-size:1rem">Alpine.js</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Desktop</span>
+            <span class="stat-value" style="font-size:1rem">PyWebView</span>
+          </div>
+        </div>
+
+        <div style="margin-top:1.5rem;display:flex;gap:0.75rem;flex-wrap:wrap">
+          <a href="/api/docs" target="_blank" class="btn btn-secondary btn-sm">📖 API Docs</a>
+          <a href="/health"   target="_blank" class="btn btn-secondary btn-sm">💚 Health Check</a>
+        </div>
+      </div>
+    </div>
+
+  </div>{# /settings panels #}
+</div>{# /x-data settings #}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.getElementById('desktop-mode-badge').textContent =
+    navigator.userAgent.includes('pywebview') ? 'Desktop App' : 'Web Browser';
+</script>
+{% endblock %}

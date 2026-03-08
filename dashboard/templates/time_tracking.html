@@ -1,101 +1,183 @@
 {% extends "base.html" %}
 
-{% block title %}{{ page_title }} - {{ dashboard_title }}{% endblock %}
+{% block title %}Time Tracking — {{ dashboard_title }}{% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <h2>{{ page_title }}</h2>
-    <p class="subtitle">Hours logged and utilization tracking</p>
+<div class="page-header" style="display:flex;align-items:center;justify-content:space-between">
+  <div>
+    <h1>Time Tracking</h1>
+    <p>Hours logged and utilization — last {{ days }} days</p>
+  </div>
+  <!-- Period selector -->
+  <div style="display:flex;gap:0.5rem">
+    <a href="/time-tracking?days=7"  class="filter-pill {% if days == 7  %}active{% endif %}">7 Days</a>
+    <a href="/time-tracking?days=30" class="filter-pill {% if days == 30 %}active{% endif %}">30 Days</a>
+    <a href="/time-tracking?days=90" class="filter-pill {% if days == 90 %}active{% endif %}">90 Days</a>
+  </div>
 </div>
 
-<!-- Time Summary -->
+<!-- KPI Cards -->
 <div class="metrics-grid">
-    <div class="metric-card">
-        <h3>Total Hours</h3>
-        <p class="metric-value">{{ "%.1f"|format(time_data.total_hours) }}</p>
-        <p class="metric-label">last {{ days }} days</p>
-    </div>
-    
-    <div class="metric-card">
-        <h3>Billable Hours</h3>
-        <p class="metric-value">{{ "%.1f"|format(time_data.billable_hours) }}</p>
-        <p class="metric-label">{{ "%.1f"|format(time_data.utilization_rate) }}% utilization</p>
-    </div>
-    
-    <div class="metric-card">
-        <h3>Non-Billable</h3>
-        <p class="metric-value">{{ "%.1f"|format(time_data.non_billable_hours) }}</p>
-        <p class="metric-label">internal/admin work</p>
-    </div>
+  <div class="metric-card purple">
+    <div class="metric-icon purple">⏱️</div>
+    <div class="metric-label">Total Hours</div>
+    <div class="metric-value">{{ "%.1f"|format(time_data.total_hours) }}h</div>
+    <div class="metric-delta">last {{ days }} days</div>
+  </div>
+  <div class="metric-card green">
+    <div class="metric-icon green">💵</div>
+    <div class="metric-label">Billable Hours</div>
+    <div class="metric-value">{{ "%.1f"|format(time_data.billable_hours) }}h</div>
+    <div class="metric-delta">{{ "%.1f"|format(time_data.utilization_rate) }}% utilization</div>
+  </div>
+  <div class="metric-card yellow">
+    <div class="metric-icon yellow">🔧</div>
+    <div class="metric-label">Non-Billable</div>
+    <div class="metric-value">{{ "%.1f"|format(time_data.non_billable_hours) }}h</div>
+    <div class="metric-delta">internal / admin</div>
+  </div>
 </div>
 
-<!-- Filter Controls -->
-<div class="filter-controls">
-    <a href="/time-tracking?days=7" class="filter-btn {% if days == 7 %}active{% endif %}">Last 7 Days</a>
-    <a href="/time-tracking?days=30" class="filter-btn {% if days == 30 %}active{% endif %}">Last 30 Days</a>
-    <a href="/time-tracking?days=90" class="filter-btn {% if days == 90 %}active{% endif %}">Last 90 Days</a>
-</div>
-
-<!-- Hours by Client -->
-<div class="clients-hours-section">
-    <h3>Hours by Client</h3>
-    <div class="table-container">
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Client</th>
-                    <th>Billable Hours</th>
-                    <th>Non-Billable Hours</th>
-                    <th>Total Hours</th>
-                    <th>Billable %</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% if time_data.by_client %}
-                    {% for client, hours in time_data.by_client.items() %}
-                    {% set total = hours.billable + hours.non_billable %}
-                    {% set billable_pct = (hours.billable / total * 100) if total > 0 else 0 %}
-                    <tr>
-                        <td><strong>{{ client }}</strong></td>
-                        <td>{{ "%.1f"|format(hours.billable) }}h</td>
-                        <td>{{ "%.1f"|format(hours.non_billable) }}h</td>
-                        <td>{{ "%.1f"|format(total) }}h</td>
-                        <td>
-                            <div class="progress-bar small">
-                                <div class="progress-fill" style="width: {{ billable_pct }}%"></div>
-                            </div>
-                            <span class="progress-text">{{ "%.0f"|format(billable_pct) }}%</span>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                {% else %}
-                    <tr>
-                        <td colspan="5" class="no-data">No time entries found</td>
-                    </tr>
-                {% endif %}
-            </tbody>
-        </table>
+<!-- Utilization bar -->
+<div class="card" style="margin-bottom:1.5rem">
+  <div class="card-header"><div class="card-title">Billable Utilization</div></div>
+  <div class="card-body">
+    <div style="display:flex;justify-content:space-between;font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.5rem">
+      <span>{{ "%.1f"|format(time_data.billable_hours) }}h billable of {{ "%.1f"|format(time_data.total_hours) }}h total</span>
+      <span style="font-weight:700;color:
+        {%- if time_data.utilization_rate >= 70 -%}var(--green)
+        {%- elif time_data.utilization_rate >= 40 -%}var(--yellow)
+        {%- else -%}var(--red){%- endif -%}
+      ">{{ "%.1f"|format(time_data.utilization_rate) }}%</span>
     </div>
+    <div class="progress" style="height:10px">
+      <div
+        class="progress-bar {% if time_data.utilization_rate >= 70 %}green{% elif time_data.utilization_rate >= 40 %}yellow{% else %}red{% endif %}"
+        style="width:{{ [time_data.utilization_rate, 100]|min }}%"
+      ></div>
+    </div>
+    <!-- Threshold labels (conditional rendering) -->
+    {% if time_data.utilization_rate < 40 %}
+    <div style="margin-top:0.75rem;padding:0.6rem 0.9rem;background:rgba(239,68,68,0.1);border-radius:6px;font-size:0.82rem;color:#f87171">
+      ⚠️ Utilization is low. Consider taking on more billable work or reducing overhead time.
+    </div>
+    {% elif time_data.utilization_rate >= 85 %}
+    <div style="margin-top:0.75rem;padding:0.6rem 0.9rem;background:rgba(245,158,11,0.1);border-radius:6px;font-size:0.82rem;color:#fbbf24">
+      🔥 High utilization — great billing rate, but watch for burnout.
+    </div>
+    {% endif %}
+  </div>
 </div>
 
-<!-- Daily Hours Chart -->
-<div class="chart-section">
-    <h3>Daily Hours</h3>
-    <div class="chart-container">
+<div class="dashboard-grid">
+
+  <!-- Hours by Client Table -->
+  <div class="card">
+    <div class="card-header"><div class="card-title">Hours by Client</div></div>
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Client</th>
+            <th>Billable</th>
+            <th>Non-Bill.</th>
+            <th>Total</th>
+            <th>Util. %</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if time_data.by_client %}
+            {% for client, hours in time_data.by_client.items() %}
+            {% set total = hours.billable + hours.non_billable %}
+            {% set pct   = (hours.billable / total * 100) if total > 0 else 0 %}
+            <tr>
+              <td style="font-weight:600">{{ client }}</td>
+              <td style="color:var(--green)">{{ "%.1f"|format(hours.billable) }}h</td>
+              <td style="color:var(--text-secondary)">{{ "%.1f"|format(hours.non_billable) }}h</td>
+              <td>{{ "%.1f"|format(total) }}h</td>
+              <td>
+                <div class="progress" style="width:80px;display:inline-block;vertical-align:middle">
+                  <div class="progress-bar {% if pct >= 70 %}green{% elif pct >= 40 %}yellow{% else %}red{% endif %}"
+                       style="width:{{ pct|min(100) }}%"></div>
+                </div>
+                <span style="font-size:0.78rem;color:var(--text-secondary);margin-left:0.3rem">{{ "%.0f"|format(pct) }}%</span>
+              </td>
+            </tr>
+            {% endfor %}
+          {% else %}
+            <tr>
+              <td colspan="5">
+                <div class="empty-state">
+                  <div class="empty-state-icon">⏱️</div>
+                  <div class="empty-state-title">No time entries</div>
+                  <div class="empty-state-desc">Log hours via the Work MCP server.</div>
+                </div>
+              </td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Daily Hours Chart -->
+  <div class="card">
+    <div class="card-header"><div class="card-title">Daily Hours</div></div>
+    <div class="card-body">
+      <div class="chart-wrapper">
         <canvas id="hoursChart"></canvas>
+      </div>
     </div>
-</div>
+  </div>
 
+</div>{# /.dashboard-grid #}
 {% endblock %}
 
 {% block extra_js %}
 <script>
-// Hours chart data
-const hoursData = {{ time_data.by_date|tojson }};
+document.addEventListener('DOMContentLoaded', () => {
+  const byDate = {{ time_data.by_date | tojson }};
+  const canvas = document.getElementById('hoursChart');
+  if (!canvas || typeof Chart === 'undefined') return;
 
-// Create hours chart when page loads
-document.addEventListener('DOMContentLoaded', function() {
-    createHoursChart('hoursChart', hoursData);
+  const labels = Object.keys(byDate).sort().slice(-{{ days }}).map(d =>
+    new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  );
+  const values = Object.keys(byDate).sort().slice(-{{ days }}).map(k => byDate[k]);
+
+  new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Hours',
+        data: values,
+        backgroundColor: 'rgba(124,58,237,0.6)',
+        borderColor: 'rgba(124,58,237,1)',
+        borderWidth: 1,
+        borderRadius: 4,
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1c2333',
+          callbacks: { label: ctx => ` ${ctx.parsed.y.toFixed(1)}h` },
+        },
+      },
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8b949e', font: { size: 10 } } },
+        y: {
+          grid: { color: 'rgba(255,255,255,0.05)' },
+          ticks: { color: '#8b949e', callback: v => v + 'h' },
+          beginAtZero: true,
+        },
+      },
+    },
+  });
 });
 </script>
 {% endblock %}

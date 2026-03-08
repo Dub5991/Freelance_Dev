@@ -1,88 +1,163 @@
 {% extends "base.html" %}
 
-{% block title %}{{ page_title }} - {{ dashboard_title }}{% endblock %}
+{% block title %}Projects — {{ dashboard_title }}{% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <h2>{{ page_title }}</h2>
-    <p class="subtitle">Active CV/AI projects and their status</p>
-</div>
+<div
+  x-data="FDO.listComponent({{ projects | tojson }}, 'status')"
+>
+  <!-- Page Header -->
+  <div class="page-header" style="display:flex;align-items:center;justify-content:space-between">
+    <div>
+      <h1>Projects</h1>
+      <p>Active tasks and project status across all clients</p>
+    </div>
+    <span
+      class="badge badge-info"
+      x-text="filtered.length + ' project' + (filtered.length !== 1 ? 's' : '')"
+    ></span>
+  </div>
 
-<!-- Filter Controls -->
-<div class="filter-controls">
-    <a href="/projects" class="filter-btn {% if not filter_status %}active{% endif %}">All</a>
-    <a href="/projects?status=pending" class="filter-btn {% if filter_status == 'pending' %}active{% endif %}">Pending</a>
-    <a href="/projects?status=in_progress" class="filter-btn {% if filter_status == 'in_progress' %}active{% endif %}">In Progress</a>
-    <a href="/projects?status=done" class="filter-btn {% if filter_status == 'done' %}active{% endif %}">Completed</a>
-</div>
+  <!-- Filter Bar with live search (Alpine.js conditional rendering) -->
+  <div class="filter-bar">
+    <div class="search-box" style="width:280px">
+      <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color:var(--text-muted);flex-shrink:0">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+      </svg>
+      <input
+        type="text"
+        placeholder="Search projects..."
+        x-model="searchQuery"
+        @input.debounce.300ms=""
+        aria-label="Search projects"
+      >
+    </div>
 
-<!-- Projects Table -->
-<div class="table-container">
-    <table class="data-table">
+    <a class="filter-pill {% if not filter_status %}active{% endif %}" href="/projects">All</a>
+    <a class="filter-pill {% if filter_status == 'pending' %}active{% endif %}" href="/projects?status=pending">Pending</a>
+    <a class="filter-pill {% if filter_status == 'in_progress' %}active{% endif %}" href="/projects?status=in_progress">In Progress</a>
+    <a class="filter-pill {% if filter_status == 'done' %}active{% endif %}" href="/projects?status=done">Done</a>
+    <a class="filter-pill {% if filter_status == 'blocked' %}active{% endif %}" href="/projects?status=blocked">Blocked</a>
+  </div>
+
+  <!-- Projects Table -->
+  <div class="card">
+    <div class="table-wrap">
+      <table class="data-table">
         <thead>
-            <tr>
-                <th>Project</th>
-                <th>Client</th>
-                <th>Status</th>
-                <th>Priority</th>
-                <th>Hours</th>
-                <th>Estimated</th>
-                <th>Progress</th>
-                <th>Due Date</th>
-            </tr>
+          <tr>
+            <th>Project</th>
+            <th>Client</th>
+            <th>Status</th>
+            <th>Priority</th>
+            <th>Logged</th>
+            <th>Estimated</th>
+            <th>Progress</th>
+            <th>Due Date</th>
+          </tr>
         </thead>
         <tbody>
-            {% if projects %}
-                {% for project in projects %}
-                <tr>
-                    <td>
-                        <strong>{{ project.title }}</strong>
-                        {% if project.billable %}<span class="badge badge-billable">BILLABLE</span>{% endif %}
-                    </td>
-                    <td>{{ project.client }}</td>
-                    <td><span class="badge badge-{{ project.status }}">{{ project.status }}</span></td>
-                    <td><span class="priority priority-{{ project.priority }}">{{ project.priority }}</span></td>
-                    <td>{{ "%.1f"|format(project.hours_logged) }}h</td>
-                    <td>{{ "%.1f"|format(project.estimated_hours) }}h</td>
-                    <td>
-                        <div class="progress-bar">
-                            {% set progress = (project.hours_logged / project.estimated_hours * 100) if project.estimated_hours > 0 else 0 %}
-                            <div class="progress-fill" style="width: {{ progress|min(100) }}%"></div>
-                        </div>
-                        <span class="progress-text">{{ "%.0f"|format(progress|min(100)) }}%</span>
-                    </td>
-                    <td>{{ project.due_date if project.due_date else 'N/A' }}</td>
-                </tr>
-                {% endfor %}
-            {% else %}
-                <tr>
-                    <td colspan="8" class="no-data">No projects found</td>
-                </tr>
-            {% endif %}
-        </tbody>
-    </table>
-</div>
+          <!-- Empty state (conditionally shown) -->
+          <template x-if="filtered.length === 0">
+            <tr>
+              <td colspan="8">
+                <div class="empty-state">
+                  <div class="empty-state-icon">📋</div>
+                  <div class="empty-state-title" x-text="searchQuery ? 'No results for \'' + searchQuery + '\'' : 'No projects found'"></div>
+                  <div class="empty-state-desc">Projects created via the Work MCP server will appear here.</div>
+                </div>
+              </td>
+            </tr>
+          </template>
 
-<!-- Summary Stats -->
-<div class="summary-section">
-    <h3>Project Summary</h3>
-    <div class="summary-grid">
-        <div class="summary-item">
-            <span class="summary-label">Total Projects</span>
-            <span class="summary-value">{{ projects|length }}</span>
-        </div>
-        <div class="summary-item">
-            <span class="summary-label">Billable Projects</span>
-            <span class="summary-value">{{ projects|selectattr("billable")|list|length }}</span>
-        </div>
-        <div class="summary-item">
-            <span class="summary-label">Total Hours Logged</span>
-            <span class="summary-value">{{ "%.1f"|format(projects|sum(attribute='hours_logged')) }}h</span>
-        </div>
-        <div class="summary-item">
-            <span class="summary-label">Total Estimated</span>
-            <span class="summary-value">{{ "%.1f"|format(projects|sum(attribute='estimated_hours')) }}h</span>
-        </div>
+          <!-- Project rows -->
+          <template x-for="project in filtered" :key="project.id">
+            <tr>
+              <td>
+                <div style="font-weight:600" x-text="project.title"></div>
+                <!-- Conditionally show BILLABLE badge -->
+                <template x-if="project.billable">
+                  <span class="badge badge-success" style="margin-top:4px">BILLABLE</span>
+                </template>
+              </td>
+              <td x-text="project.client || 'N/A'"></td>
+              <td>
+                <span
+                  class="badge"
+                  :class="{
+                    'badge-warning': project.status === 'pending',
+                    'badge-info':    project.status === 'in_progress',
+                    'badge-success': project.status === 'done',
+                    'badge-danger':  project.status === 'blocked',
+                    'badge-neutral': !['pending','in_progress','done','blocked'].includes(project.status)
+                  }"
+                  x-text="project.status"
+                ></span>
+              </td>
+              <td>
+                <span
+                  class="badge"
+                  :class="{
+                    'priority-P0': project.priority === 'P0',
+                    'priority-P1': project.priority === 'P1',
+                    'priority-P2': project.priority === 'P2',
+                    'priority-P3': project.priority === 'P3',
+                  }"
+                  x-text="project.priority"
+                ></span>
+              </td>
+              <td x-text="project.hours_logged.toFixed(1) + 'h'"></td>
+              <td x-text="project.estimated_hours > 0 ? project.estimated_hours.toFixed(1) + 'h' : '—'"></td>
+              <td>
+                <template x-if="project.estimated_hours > 0">
+                  <div style="min-width:100px">
+                    <div class="progress">
+                      <div
+                        class="progress-bar"
+                        :class="{
+                          'green':  (project.hours_logged / project.estimated_hours) <= 0.75,
+                          'yellow': (project.hours_logged / project.estimated_hours) > 0.75 && (project.hours_logged / project.estimated_hours) <= 1,
+                          'red':    (project.hours_logged / project.estimated_hours) > 1
+                        }"
+                        :style="'width:' + Math.min(project.hours_logged / project.estimated_hours * 100, 100) + '%'"
+                      ></div>
+                    </div>
+                    <div style="font-size:0.72rem;color:var(--text-muted);margin-top:3px"
+                      x-text="Math.min(Math.round(project.hours_logged / project.estimated_hours * 100), 100) + '%'"
+                    ></div>
+                  </div>
+                </template>
+                <template x-if="project.estimated_hours <= 0">
+                  <span style="color:var(--text-muted)">—</span>
+                </template>
+              </td>
+              <td x-text="project.due_date ? project.due_date.slice(0,10) : '—'"></td>
+            </tr>
+          </template>
+        </tbody>
+      </table>
     </div>
-</div>
+  </div>
+
+  <!-- Summary Stats (always shown) -->
+  <div class="stat-grid" style="margin-top:1.5rem">
+    <div class="stat-item">
+      <span class="stat-label">Total</span>
+      <span class="stat-value" x-text="items.length"></span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-label">Billable</span>
+      <span class="stat-value success" x-text="items.filter(p => p.billable).length"></span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-label">Hours Logged</span>
+      <span class="stat-value" x-text="items.reduce((s,p) => s + p.hours_logged, 0).toFixed(1) + 'h'"></span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-label">Estimated</span>
+      <span class="stat-value" x-text="items.reduce((s,p) => s + p.estimated_hours, 0).toFixed(1) + 'h'"></span>
+    </div>
+  </div>
+
+</div>{# /x-data #}
 {% endblock %}

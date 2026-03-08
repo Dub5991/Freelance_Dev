@@ -1,26 +1,43 @@
 # Freelance Dev OS - Python Dependencies
 
-# Core dependencies
+# ─── Core ──────────────────────────────────────────────────────────────────────
 python-dotenv==1.0.0
 pydantic==2.5.0
 pyyaml==6.0.1
 
-# Stripe integration for billing
+# ─── Web Framework ─────────────────────────────────────────────────────────────
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+jinja2==3.1.2
+python-multipart==0.0.6
+websockets==12.0
+
+# ─── Security ──────────────────────────────────────────────────────────────────
+python-jose[cryptography]==3.3.0   # JWT tokens
+passlib[bcrypt]==1.7.4              # Password hashing
+slowapi==0.1.9                      # Rate limiting
+cryptography==41.0.7                # Crypto primitives
+
+# ─── Billing ───────────────────────────────────────────────────────────────────
 stripe==7.8.0
 
-# CLI and output formatting
+# ─── CLI / Output ──────────────────────────────────────────────────────────────
 rich==13.7.0
 
-# Testing
+# ─── Desktop (cross-platform GUI wrapper) ──────────────────────────────────────
+pywebview==4.4.1
+
+# ─── Build / Packaging ─────────────────────────────────────────────────────────
+pyinstaller==6.3.0
+
+# ─── Testing ───────────────────────────────────────────────────────────────────
 pytest==7.4.3
 pytest-asyncio==0.21.1
 pytest-cov==4.1.0
 pytest-mock==3.12.0
+httpx==0.25.2          # Async test client for FastAPI
 
-# Optional: For email notifications
-# smtplib is part of Python standard library
-
-# Development dependencies
+# ─── Development / Linting ─────────────────────────────────────────────────────
 black==23.12.1
 flake8==6.1.0
 mypy==1.7.1

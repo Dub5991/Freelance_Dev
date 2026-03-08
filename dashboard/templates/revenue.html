@@ -1,83 +1,133 @@
 {% extends "base.html" %}
 
-{% block title %}{{ page_title }} - {{ dashboard_title }}{% endblock %}
+{% block title %}Revenue — {{ dashboard_title }}{% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <h2>{{ page_title }}</h2>
-    <p class="subtitle">Financial performance and invoice tracking</p>
-</div>
+<div x-data="FDO.listComponent({{ invoices | tojson }}, 'status')">
 
-<!-- Revenue Summary -->
-<div class="metrics-grid">
-    <div class="metric-card">
-        <h3>Total Revenue</h3>
-        <p class="metric-value">${{ "%.2f"|format(revenue.total) }}</p>
-        <p class="metric-label">last 12 months</p>
-    </div>
-    
-    <div class="metric-card">
-        <h3>Monthly Average</h3>
-        <p class="metric-value">${{ "%.2f"|format(revenue.average) }}</p>
-        <p class="metric-label">average per month</p>
-    </div>
-</div>
+  <!-- Page Header -->
+  <div class="page-header">
+    <h1>Revenue</h1>
+    <p>Financial performance and invoice tracking</p>
+  </div>
 
-<!-- Revenue Chart -->
-<div class="chart-section">
-    <h3>Monthly Revenue Trend</h3>
-    <div class="chart-container">
+  <!-- KPI Cards -->
+  <div class="metrics-grid">
+    <div class="metric-card green">
+      <div class="metric-icon green">💰</div>
+      <div class="metric-label">Total Revenue (12 mo)</div>
+      <div class="metric-value">${{ "%.2f"|format(revenue.total) }}</div>
+      <div class="metric-delta">last 12 months</div>
+    </div>
+    <div class="metric-card purple">
+      <div class="metric-icon purple">📈</div>
+      <div class="metric-label">Monthly Average</div>
+      <div class="metric-value">${{ "%.2f"|format(revenue.average) }}</div>
+      <div class="metric-delta">per month</div>
+    </div>
+    <div class="metric-card yellow">
+      <div class="metric-icon yellow">🧾</div>
+      <div class="metric-label">Invoices (total)</div>
+      <div class="metric-value">{{ invoices | length }}</div>
+      <div class="metric-delta">on record</div>
+    </div>
+  </div>
+
+  <!-- Revenue Chart -->
+  <div class="card" style="margin-bottom:1.5rem">
+    <div class="card-header">
+      <div class="card-title">Monthly Revenue Trend</div>
+    </div>
+    <div class="card-body">
+      <div class="chart-wrapper">
         <canvas id="revenueChart"></canvas>
+      </div>
     </div>
-</div>
+  </div>
 
-<!-- Recent Invoices -->
-<div class="invoices-section">
-    <h3>Recent Invoices</h3>
-    <div class="table-container">
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Invoice ID</th>
-                    <th>Client</th>
-                    <th>Amount</th>
-                    <th>Status</th>
-                    <th>Issue Date</th>
-                    <th>Due Date</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% if invoices %}
-                    {% for invoice in invoices %}
-                    <tr>
-                        <td><code>{{ invoice.id }}</code></td>
-                        <td>{{ invoice.client }}</td>
-                        <td><strong>${{ "%.2f"|format(invoice.amount) }}</strong></td>
-                        <td><span class="badge badge-{{ invoice.status }}">{{ invoice.status }}</span></td>
-                        <td>{{ invoice.issue_date }}</td>
-                        <td>{{ invoice.due_date }}</td>
-                    </tr>
-                    {% endfor %}
-                {% else %}
-                    <tr>
-                        <td colspan="6" class="no-data">No invoices found</td>
-                    </tr>
-                {% endif %}
-            </tbody>
-        </table>
+  <!-- Invoices Table with live filter -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Recent Invoices</div>
+      <div style="display:flex;gap:0.5rem;align-items:center">
+        <!-- Search -->
+        <div class="search-box" style="width:200px">
+          <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color:var(--text-muted);flex-shrink:0">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
+          <input type="text" placeholder="Search..." x-model="searchQuery">
+        </div>
+        <!-- Status filters -->
+        <button class="filter-pill" :class="{'active': activeFilter===''}"       @click="setFilter('')">All</button>
+        <button class="filter-pill" :class="{'active': activeFilter==='paid'}"   @click="setFilter('paid')">Paid</button>
+        <button class="filter-pill" :class="{'active': activeFilter==='pending'}" @click="setFilter('pending')">Pending</button>
+        <button class="filter-pill" :class="{'active': activeFilter==='overdue'}" @click="setFilter('overdue')">Overdue</button>
+      </div>
     </div>
-</div>
 
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Invoice ID</th>
+            <th>Client</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th>Issue Date</th>
+            <th>Due Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          <template x-if="filtered.length === 0">
+            <tr>
+              <td colspan="6">
+                <div class="empty-state">
+                  <div class="empty-state-icon">🧾</div>
+                  <div class="empty-state-title" x-text="searchQuery ? 'No results for \'' + searchQuery + '\'' : 'No invoices found'"></div>
+                </div>
+              </td>
+            </tr>
+          </template>
+
+          <template x-for="inv in filtered" :key="inv.id">
+            <tr>
+              <td><code style="font-family:var(--font-mono);font-size:0.8rem" x-text="inv.id"></code></td>
+              <td x-text="inv.client"></td>
+              <td style="font-weight:700" x-text="'$' + parseFloat(inv.amount).toFixed(2)"></td>
+              <td>
+                <span class="badge"
+                  :class="{
+                    'badge-success': inv.status === 'paid',
+                    'badge-warning': inv.status === 'pending',
+                    'badge-danger':  inv.status === 'overdue',
+                    'badge-info':    inv.status === 'sent',
+                    'badge-neutral': !['paid','pending','overdue','sent'].includes(inv.status)
+                  }"
+                  x-text="inv.status"
+                ></span>
+              </td>
+              <td x-text="inv.issue_date || '—'"></td>
+              <td>
+                <!-- Highlight overdue dates (conditional rendering) -->
+                <span
+                  x-text="inv.due_date || '—'"
+                  :style="inv.status === 'overdue' ? 'color:var(--red);font-weight:600' : ''"
+                ></span>
+              </td>
+            </tr>
+          </template>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>{# /x-data #}
 {% endblock %}
 
 {% block extra_js %}
 <script>
-// Revenue chart data
-const revenueData = {{ revenue.monthly|tojson }};
-
-// Create revenue chart when page loads
-document.addEventListener('DOMContentLoaded', function() {
-    createRevenueChart('revenueChart', revenueData);
-});
+  document.addEventListener('DOMContentLoaded', () => {
+    FDO.renderRevenueChart('revenueChart', {{ revenue.monthly | tojson }});
+  });
 </script>
 {% endblock %}
